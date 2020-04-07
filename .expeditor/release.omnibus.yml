@@ -7,9 +7,9 @@ fips-platforms:
   - el-*-x86_64
   - windows-*
 builder-to-testers-map:
-  aix-7.1-powerpc:
-    - aix-7.1-powerpc
-    - aix-7.2-powerpc
+  # aix-7.1-powerpc:
+  #   - aix-7.1-powerpc
+  #   - aix-7.2-powerpc
   debian-8-x86_64:
     - debian-8-x86_64
     - debian-9-x86_64
@@ -21,20 +21,22 @@ builder-to-testers-map:
   el-7-aarch64:
     - el-7-aarch64
     - el-8-aarch64
-  el-7-ppc64:
-    - el-7-ppc64
-  el-7-ppc64le:
-    - el-7-ppc64le
+    - amzn-2-aarch64
+  # el-7-ppc64:
+  #   - el-7-ppc64
+  # el-7-ppc64le:
+  #   - el-7-ppc64le
   el-7-x86_64:
     - el-7-x86_64
     - el-8-x86_64
+    - amzn-2-x86_64
   freebsd-11-amd64:
     - freebsd-11-amd64
     - freebsd-12-amd64
-  mac_os_x-10.13-x86_64:
-    - mac_os_x-10.13-x86_64
-    - mac_os_x-10.14-x86_64
-    - mac_os_x-10.15-x86_64
+  # mac_os_x-10.13-x86_64:
+  #   - mac_os_x-10.13-x86_64
+  #   - mac_os_x-10.14-x86_64
+  #   - mac_os_x-10.15-x86_64
   sles-12-x86_64:
     - sles-12-x86_64
     - sles-15-x86_64
