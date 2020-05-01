@@ -42,13 +42,13 @@ class Chef
           def dnf_command
             # platform-python is used for system tools on RHEL 8 and is installed under /usr/libexec
             @dnf_command ||= begin
-              cmd = which("platform-python", "python", "python3", "python2", "python2.7", extra_path: "/usr/libexec") do |f|
-                shell_out("#{f} -c 'import dnf'").exitstatus == 0
-              end
-              raise Chef::Exceptions::Package, "cannot find dnf libraries, you may need to use yum_package" unless cmd
+                               cmd = which("platform-python", "python", "python3", "python2", "python2.7", extra_path: "/usr/libexec") do |f|
+                                 shell_out("#{f} -c 'import dnf'").exitstatus == 0
+                               end
+                               raise Chef::Exceptions::Package, "cannot find dnf libraries, you may need to use yum_package" unless cmd
 
-              "#{cmd} #{DNF_HELPER}"
-            end
+                               "#{cmd} #{DNF_HELPER}"
+                             end
           end
 
           def start
@@ -103,10 +103,47 @@ class Chef
             end
           end
 
+          # This deals with mangling version and arch properties to embed them into the name.  It attempts to construct a valid
+          # name-version.arch string.  Certain combinations may fail, and other are likely not bugs.  Where this function fails
+          # are the edge conditions where users MUST switch to no longer using the arch and version properties and convert their
+          # code to using the name string only (which should fully support any options on the command line).  The fact that it
+          # does not do everything your heart desires is not a bug.  Patches that turn it into spaghetti will not be accepted.
+          # You can try to submit a PR against this but it must be exceptionally clean, small, understandable and well-tested.
+          #
+          # @return String
+          # @api private
+          #
+          def combine_arguments(provides, version, arch)
+            if version
+              if provides.count(".") > 1
+                # with more than 1 dot we've been passed a version in both places, pick one or the other and stop being crazy.
+                raise Chef::Exceptions::Package, "cannot combine a version property \"#{version}\" with an embedded version in the name string \"#{provides}\""
+              end
+
+              # now with zero or one dots we either have a name or an arch, or something insane we won't support.
+              name, arch = provides.split(".")
+              if arch
+                provides = "#{name}-#{version}.#{arch}"
+              else
+                provides = "#{name}-#{version}"
+              end
+            end
+            if arch
+              if provides.end_with?(arch)
+                # i'll let this work, but people are getting crazy and if you typo something then the error messages will get poor
+                Chef::Log.warn("arch property of \"#{arch}\" appears in name string of \"#{provides}\", please remove one or the other")
+              else
+                # if you have an arch in the name and an arch in the property this will fail somewhat confusingly
+                provides = "#{provides}.#{arch}"
+              end
+            end
+            provides
+          end
+
           # @return Array<Version>
           # NB: "options" here is the dnf_package options hash and is deliberately not **opts
           def package_query(action, provides, version: nil, arch: nil, options: {})
-            parameters = { "provides" => provides, "version" => version, "arch" => arch }
+            parameters = { "provides" => combine_arguments(provides, version, arch) }
             repo_opts = options_params(options || {})
             parameters.merge!(repo_opts)
             # XXX: for now we restart before and after every query with an enablerepo/disablerepo to clean the helpers internal state
